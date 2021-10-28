@@ -5,6 +5,7 @@
                 <th>Keyword</th>
                 <th>Country</th>
                 <th>Device</th>
+                <th>Search Engine</th>
                 <th>Status</th>
                 <th>Action</th>
             </tr>
@@ -19,12 +20,13 @@
                 <td>{{$search->keyword}}</td>
                 <td>{{$search->country}}</td>
                 <td>{{$search->device}}</td>
+                <td>{{$search->search_engine}}</td>
                 <td>
                     @if($search->status == 'PENDING')
                         <span class="badge badge-warning">Pending</span>
                     @elseif($search->status == 'PARTIAL_COMPLETED')
                         <span class="badge badge-success">Partial Completed</span>
-                    @else 
+                    @else
                          <span class="badge badge-success">Completed</span>
                     @endif
                 </td>

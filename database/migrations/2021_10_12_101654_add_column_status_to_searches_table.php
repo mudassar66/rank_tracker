@@ -14,7 +14,7 @@ class AddColumnStatusToSearchesTable extends Migration
     public function up()
     {
         Schema::table('searches', function (Blueprint $table) {
-            $table->boolean('status')->after('device')->default(0);
+            $table->string('status')->after('device')->default('PENDING');
         });
     }
 
