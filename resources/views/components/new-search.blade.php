@@ -4,7 +4,13 @@
 <div>
     <form method="POST" action="{{ route('task_post') }}">
     @csrf
-
+        <div class="col-md-6">
+            <x-label for="Search" :value="__('Search Engine')" />
+            <select name="search_engine" id="search_engine" class="block mt-1 w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                <option value="google">Google</option>
+                <option value="bing">Bing</option>
+            </select>
+        </div>
     <!-- Name -->
         <div class="col-md-6">
             <x-label for="keyword" :value="__('Keyword')" />
@@ -19,6 +25,7 @@
                 @endforeach
             </select>
         </div>
+
 
         <div class="col-md-6">
             <x-label for="device" :value="__('Select Device')" />
@@ -48,7 +55,7 @@
     <script>
         $(document).ready(function() {
             $('#country').select2();
-        
+
         });
     </script>
 

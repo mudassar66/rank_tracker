@@ -12,9 +12,9 @@ class DataForSeoClient
     protected $password;
     public $priority;
 
-    public function __construct()
+    public function __construct($search_engine = 'google')
     {
-        $this->baseUrl = Config::get('dataforseo.base_url');
+        $this->baseUrl = $search_engine == 'google'?Config::get('dataforseo.google_base_url'):Config::get('dataforseo.bing_base_url');
         $this->userName = Config::get('dataforseo.user_name');
         $this->password = Config::get('dataforseo.password');
         $this->priority = Config::get('dataforseo.priority');
@@ -33,6 +33,6 @@ class DataForSeoClient
         return $response;
     }
 
-  
+
 
 }

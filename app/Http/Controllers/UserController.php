@@ -102,9 +102,10 @@ class UserController extends Controller
     public function taskPost(Request $request)
     {
         try {
-            
+
             $countries = Helper::getCountries();
             $validator = Validator::make($request->all(), [
+                'search_engine' => 'required',
                 'keyword' => 'required|string|max:500',
                 'country' => 'required|string|in:' . implode(',', array_keys($countries)),
                 'device' => 'required|string|in:' . implode(',', array_keys(Helper::getDevices())),
@@ -119,7 +120,7 @@ class UserController extends Controller
             $search = Search::create($input);
 
             $requestData = [];
-            $client = new DataForSeoClient();
+            $client = new DataForSeoClient($request->search_engine);
             for ($i = 1; $i <= $request->iterations ;$i++) {
                 $data['language_code'] = 'en';
                 $data['location_name'] = $countries[$request->country];
@@ -171,7 +172,7 @@ class UserController extends Controller
     public function taskPostBackScript(Request $request)
     {
         try {
-            
+
            Log::info('Response received from Dataforseo');
             $client = new DataForSeoClient();
             $post_arr = json_decode(gzdecode($request->getContent()), true);
@@ -199,13 +200,13 @@ class UserController extends Controller
                      }else{
                           Log::error('Error on task', $task['status_message']);
                      }
-                    
+
                 }
-              
+
             } else {
                Log::error('Not success');
             }
-            
+
         }
         catch (\Exception $e){
             Log::error($e->getMessage());

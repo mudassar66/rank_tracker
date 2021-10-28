@@ -31,6 +31,7 @@ class Search extends Model
 
     public $fillable = [
         'keyword',
+        'search_engine',
         'country',
         'device' ,
         'user_id',
@@ -45,6 +46,7 @@ class Search extends Model
     protected $casts = [
         'id' => 'integer',
         'keyword' => 'string',
+        'search_engine' => 'string',
         'country' => 'string',
         'device' => 'string',
     ];
