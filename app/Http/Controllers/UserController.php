@@ -109,7 +109,7 @@ class UserController extends Controller
                 'keyword' => 'required|string|max:500',
                 'country' => 'required|string|in:' . implode(',', array_keys($countries)),
                 'device' => 'required|string|in:' . implode(',', array_keys(Helper::getDevices())),
-                'iterations' => 'required|numeric|min:1|max:100'
+                'iterations_count' => 'required|numeric|min:1|max:100'
             ]);
 
             if ($validator->fails()) {
@@ -121,7 +121,7 @@ class UserController extends Controller
 
             $requestData = [];
             $client = new DataForSeoClient($request->search_engine);
-            for ($i = 1; $i <= $request->iterations ;$i++) {
+            for ($i = 1; $i <= $request->iterations_count ;$i++) {
                 $data['language_code'] = 'en';
                 $data['location_name'] = $countries[$request->country];
                 $data['device'] = $request->device;

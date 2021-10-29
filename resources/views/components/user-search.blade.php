@@ -7,6 +7,8 @@
                 <th>Device</th>
                 <th>Search Engine</th>
                 <th>Status</th>
+                <th>Created At</th>
+                <th>Iterations</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -30,6 +32,8 @@
                          <span class="badge badge-success">Completed</span>
                     @endif
                 </td>
+                <td>{{ $search->created_at->toDayDateTimeString() }}</td>
+                <td>{{ $search->iterations_count }}</td>
                 <td>
                     @if($search->status == 'COMPLETED' || $search->status == 'PARTIAL_COMPLETED' )
                         <a href="{{route('search_results', $search->id)}}"><i class="fa fa-eye"></i></a>

@@ -35,7 +35,8 @@ class Search extends Model
         'country',
         'device' ,
         'user_id',
-        'status'
+        'status',
+        'iterations_count'
         ];
 
     /**
@@ -49,6 +50,7 @@ class Search extends Model
         'search_engine' => 'string',
         'country' => 'string',
         'device' => 'string',
+        'iterations_count' => 'integer'
     ];
 
     /**

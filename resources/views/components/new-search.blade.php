@@ -36,9 +36,9 @@
             </select>
         </div>
         <div class="col-md-6">
-            <x-label for="iterations" :value="__('Number of Iterations')" />
+            <x-label for="iterations_count" :value="__('Number of Iterations')" />
 
-            <x-input id="iterations" class="block mt-1 w-full" type="number" name="iterations" value="1" required min="1" max="100"/>
+            <x-input id="iterations_count" class="block mt-1 w-full" type="number" name="iterations_count" value="1" required min="1" max="100"/>
         </div>
 
 

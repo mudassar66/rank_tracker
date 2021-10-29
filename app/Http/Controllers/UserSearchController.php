@@ -30,9 +30,9 @@ class UserSearchController extends Controller
                 // dd($searchResults);
             $items = $searchResults['result'][0]['items'];
             $data = array_merge($data,$items);
-          
+
             $count[] = "IT-".($index+1)."-".Carbon::createFromFormat('Y-m-d H:i:s', $iteration->updated_at)->format('Y/m/d H:i:s');
-        
+
             }
         }
         $graphData = [];
@@ -75,7 +75,7 @@ class UserSearchController extends Controller
             }
              $graphData[] = $data;
         }
-    
+
         return view('search-results')->with(['graphData' => ['labels' => $count, 'datasets' => $graphData], 'tableData' => $tableData, 'total' => $total, 'completed' => $completed]);
     }
 }
