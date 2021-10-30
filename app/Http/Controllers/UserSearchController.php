@@ -22,6 +22,7 @@ class UserSearchController extends Controller
         $iterations = $search->iterations()->orderBy('updated_at', 'desc')->get();
         $data = [];
         $count = [];
+        $labels = [];
         $total =$iterations->count();
         $completed =$iterations->where('search_results','!=', null)->count();
         foreach ($iterations as $index => $iteration){
@@ -37,13 +38,14 @@ class UserSearchController extends Controller
         }
         $graphData = [];
         $tableData = [];
-        $groupedData = collect($data)->groupBy('domain');
+        $groupedData = collect($data)->groupBy('url');
+        $boxplot_data = [];
         foreach ($groupedData as $site => $group){
             $color = sprintf('#%06X', mt_rand(1, 0xFFFFFF));
             $tableData[$site] = [
                 'title' => $group[0]['title'],
                  'description' => $group[0]['description'],
-                  'url' => [],
+                  'url' => $group[0]['url'],
                   'domain' => $group[0]['domain'],
                   'ranks' => []
                 ];
@@ -56,19 +58,23 @@ class UserSearchController extends Controller
                 'borderColor'=> $color,
                 'backgroundColor' => $color
             ];
+            $labels[] = $group[0]['url'];
             foreach($iterations as $index => $iteration){
                 if(!is_null($iteration->search_results)){
                     $searchResults = json_decode($iteration->search_results, true);
-                    $items = collect($searchResults['result'][0]['items'])->where('domain',$site );
+                    $items = collect($searchResults['result'][0]['items'])->where('url',$site );
                     $rank = [];
                     $urls = [];
                     if(count($items) == 0){
                          $rank[] = 'X';
                     }
                     foreach($items as $item){
-                        $data['data'][] = ['x' =>"IT-".($index+1)."-".Carbon::createFromFormat('Y-m-d H:i:s', $iteration->updated_at)->format('Y/m/d H:i:s'), 'y' =>  $item['rank_group']];
+                        $data['data'][] = [
+                            'x' =>"IT-".($index+1)."-".Carbon::createFromFormat('Y-m-d H:i:s', $iteration->updated_at)->format('Y/m/d H:i:s'),
+                            'y' =>  $item['rank_group']
+                        ];
                         $rank[] = $item['rank_group'];
-                        $tableData[$site]['url'][] = $item['url'];
+//                        $tableData[$site]['url'][] = $item['url'];
                     }
                     $tableData[$site]['ranks'][] = implode(',', $rank);
                 }
@@ -76,6 +82,15 @@ class UserSearchController extends Controller
              $graphData[] = $data;
         }
 
-        return view('search-results')->with(['graphData' => ['labels' => $count, 'datasets' => $graphData], 'tableData' => $tableData, 'total' => $total, 'completed' => $completed]);
+        // Box plot prepare data
+        foreach ($tableData as $url=>$url_data){
+            $boxplot_data[] = $url_data['ranks'];
+        }
+//        dump($boxplot_data);
+//        echo "<pre>";
+//        print_r($graphData);
+//        echo "</pre>";
+
+        return view('search-results')->with(['graphData' => ['labels' => $labels, 'datasets' => $graphData], 'tableData' => $tableData, 'total' => $total, 'completed' => $completed, 'boxpot_data'=>$boxplot_data]);
     }
 }
