@@ -2,24 +2,18 @@
 
 namespace App\View\Components;
 
-use Illuminate\Support\Facades\Auth;
 use Illuminate\View\Component;
-use PHPHtmlParser\Dom;
-use TextRazor;
-use TextRazorSettings;
 
-class UserSearch extends Component
+class AnalyzeResult extends Component
 {
     /**
      * Create a new component instance.
      *
      * @return void
      */
-
-    public $userSearches;
     public function __construct()
     {
-        $this->userSearches = Auth::user()->searches()->orderBy('created_at', 'desc')->get();
+        //
     }
 
     /**
@@ -29,6 +23,6 @@ class UserSearch extends Component
      */
     public function render()
     {
-        return view('components.user-search');
+        return view('components.analyze-result');
     }
 }

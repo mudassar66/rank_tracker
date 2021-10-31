@@ -35,9 +35,10 @@
                 <div class="p-6 bg-white border-b border-gray-200">
                     <h1 class="font-semibold text-xl text-gray-800 leading-tight mb-2">Search Results</h1>
                     <div class="pt-3">
-                            <button class="btn btn-primary" id="select">Select All</button>
-                            <button class="btn btn-warning" id="unselect">Unselect All</button>
-                        </div>
+                        <button class="btn btn-primary" id="select">Select All</button>
+                        <button class="btn btn-warning" id="unselect">Unselect All</button>
+                        <button class="btn btn-success" id="analyze">Analyze</button>
+                    </div>
                     <div class="pt-2">
 
                         <div class="table-responsive">
@@ -61,7 +62,7 @@
 
                                         <tr>
                                             <td style="width: 4%;">
-                                                <input class="site" type="checkbox" checked onchange="dataDisplay(event, '{{$search['url']}}')" >
+                                                <input class="site" type="checkbox" checked value="{{$search['url']}}">
                                             </td>
                                             <td style=" width: 20%;">{{$search['title']}}</td>
                                             <td style=" width: 20%; word-wrap: break-word;min-width: 160px;max-width: 160px;">{{$search['description']}}</td>
@@ -108,9 +109,21 @@
         </div>
       </div>
     </div>
+    <x-analyze-result></x-analyze-result>
     @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
         <script src="https://unpkg.com/chart.js@3"></script>
         <script src="https://unpkg.com/@sgratzl/chartjs-chart-boxplot@3"></script>
+        <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+        <script>
+            var analyzeModal = new Vue({
+                el: '#analyze_results',
+                data: {
+                    results:{}
+
+                }
+                });
+        </script>
         <script>
             var data = {!! json_encode($graphData) !!};
 
@@ -146,7 +159,7 @@
                         indexAxis: 'y',
                         responsive: true,
                         legend: {
-                            position: 'top',
+                            display: false
                         },
                         scales: {
                             yAxis: {
@@ -263,6 +276,35 @@
                 $('#urls').html(html);
                 $('#exampleModal').modal('show');
             }
+
+            $("#analyze").on('click', function () {
+                // HoldOn.open();
+                var urls = [];
+                $.each($('input[class="site"]:checked'), function (index, checkbox) {
+                    urls.push(checkbox.value);
+                });
+                axios({
+                    method: 'POST',
+                    url: '{{url('analyze')}}'
+                    , data: {
+                        urls: urls,
+                    }
+                })
+                    .then(response => {
+                        HoldOn.close();
+                        analyzeModal.results = response.data.data;
+                        $('#analyze_results').modal('show');
+
+                    }).catch(e => {
+                    HoldOn.close();
+                    swal({
+                        title: "Error",
+                        text: e.response.data.message,
+                        icon: "error",
+                    });
+                });
+
+            });
 
 
         </script>
