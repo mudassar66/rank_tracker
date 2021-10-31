@@ -18,6 +18,17 @@
             </div>
         </div>
     </div>
+    <div class="pt-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 bg-white border-b border-gray-200">
+                    <h1 class="font-semibold text-xl text-gray-800 leading-tight mb-2">Search Results</h1>
+
+                    <canvas id="boxChart" width="600" height="600"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="pt-12 col-lg-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white  shadow-sm sm:rounded-lg">
@@ -102,7 +113,10 @@
         <script src="https://unpkg.com/@sgratzl/chartjs-chart-boxplot@3"></script>
         <script>
             var data = {!! json_encode($graphData) !!};
+
             var boxplotDataFromServer = {!! json_encode($boxpot_data) !!};
+            var boxplotDataLabels = {!! json_encode($boxpot_data_labels) !!};
+
             function randomValues(count, min, max) {
                 const delta = max - min;
                 return Array.from({length: count}).map(() => Math.random() * delta + min);
@@ -111,7 +125,7 @@
             const boxplotData = {
                 // define label tree
                 // labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-                labels: data.labels,
+                labels: boxplotDataLabels,
                 datasets: [{
                     label: 'Ranks Volatility',
                     backgroundColor: 'rgba(255,0,0,0.5)',
@@ -124,7 +138,7 @@
                 }]
             };
             window.onload = () => {
-                const ctx = document.getElementById("speedChart").getContext("2d");
+                const ctx = document.getElementById("boxChart").getContext("2d");
                 window.myBar = new Chart(ctx, {
                     type: 'boxplot',
                     data: boxplotData,
@@ -144,84 +158,84 @@
 
             };
 
-            // const config = {
-            //     type: 'line',
-            //     data: data,
-            //     options: {
-            //         responsive: true,
-            //         stacked: false,
-            //         plugins: {
-            //             title: {
-            //                 display: true,
-            //                 text: 'Rank fluctuation graph'
-            //             },
-            //             legend: {
-            //                 display: false
-            //             },
-            //             tooltip: {
-            //                 enabled: true,
-            //                 callbacks: {
-            //                     // label: function(tooltipItems) {
-            //                     //     tooltipItems.label = tooltipItems.label + " Iteration"
-            //                     //     console.log(tooltipItems);
-            //                     //     // return tooltipItems.yLabel + ' : ' + tooltipItems.xLabel + " Files";
-            //                     // }
-            //                 }
-            //             },
-            //             datalabels: {
-            //                 function (context) {
-            //                     return context.chart.isDatasetVisible(context.datasetIndex);
-            //                 }
-            //             },
-            //         },
-            //         scales: {
-            //             y: {
-            //                 type: 'linear',
-            //                 display: true,
-            //                 position: 'left',
-            //                 stacked: false,
-            //                  reverse: true,
-            //                  beginAtZero: false,
-            //                 ticks : {
-            //                     min: 1,
-            //                     max: 100,
-            //                     stepSize : 5,
-            //
-            //                 }
-            //             },
-            //             x: {
-            //                 ticks: {
-            //                     min : 0,
-            //                     beginAtZero: true
-            //                 }
-            //             }
-            //         }
-            //     },
-            // };
-            // var speedCanvas = document.getElementById("speedChart");
-            //
-            // var lineChart = new Chart(speedCanvas, config);
-            //
-            // function dataDisplay(event, label){
-            //     console.log(label);
-            //     console.log(event.target.checked);
-            //      lineChart.data.datasets.forEach(function(ds) {
-            //
-            //
-            // 	     if(ds.label == label){
-            //
-            // 	        if(event.target.checked){
-            //                 ds.hidden = false;
-            //             }else{
-            //                  ds.hidden = true;
-            //             }
-            // 	        return false;
-            // 	     }
-            //
-            //       });
-            //       lineChart.update();
-            // }
-            //
+            const config = {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    stacked: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Rank fluctuation graph'
+                        },
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: true,
+                            callbacks: {
+                                // label: function(tooltipItems) {
+                                //     tooltipItems.label = tooltipItems.label + " Iteration"
+                                //     console.log(tooltipItems);
+                                //     // return tooltipItems.yLabel + ' : ' + tooltipItems.xLabel + " Files";
+                                // }
+                            }
+                        },
+                        datalabels: {
+                            function (context) {
+                                return context.chart.isDatasetVisible(context.datasetIndex);
+                            }
+                        },
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            stacked: false,
+                             reverse: true,
+                             beginAtZero: false,
+                            ticks : {
+                                min: 1,
+                                max: 100,
+                                stepSize : 5,
+
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                min : 0,
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                },
+            };
+            var speedCanvas = document.getElementById("speedChart");
+
+            var lineChart = new Chart(speedCanvas, config);
+
+            function dataDisplay(event, label){
+                console.log(label);
+                console.log(event.target.checked);
+                 lineChart.data.datasets.forEach(function(ds) {
+
+
+            	     if(ds.label == label){
+
+            	        if(event.target.checked){
+                            ds.hidden = false;
+                        }else{
+                             ds.hidden = true;
+                        }
+            	        return false;
+            	     }
+
+                  });
+                  lineChart.update();
+            }
+
             $("#select").on('click', function() {
             	$('.site').prop('checked', true);
                 window.myBar.data.datasets.forEach(function(ds) {

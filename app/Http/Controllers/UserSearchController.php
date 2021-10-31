@@ -91,6 +91,6 @@ class UserSearchController extends Controller
 //        print_r($graphData);
 //        echo "</pre>";
 
-        return view('search-results')->with(['graphData' => ['labels' => $labels, 'datasets' => $graphData], 'tableData' => $tableData, 'total' => $total, 'completed' => $completed, 'boxpot_data'=>$boxplot_data]);
+        return view('search-results')->with(['graphData' => ['labels' => $count, 'datasets' => $graphData], 'tableData' => $tableData, 'total' => $total, 'completed' => $completed, 'boxpot_data'=>$boxplot_data, 'boxpot_data_labels'=>$labels]);
     }
 }
