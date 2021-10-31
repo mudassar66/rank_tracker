@@ -33,10 +33,10 @@ class UserSearchController extends Controller
             if(!is_null($iteration->search_results)){
                 $searchResults = json_decode($iteration->search_results, true);
                 // dd($searchResults);
-            $items = $searchResults['result'][0]['items'];
-            $data = array_merge($data,$items);
+                $items = $searchResults['result'][0]['items'];
+                $data = array_merge($data,$items);
 
-            $count[] = "IT-".($index+1)."-".Carbon::createFromFormat('Y-m-d H:i:s', $iteration->updated_at)->format('Y/m/d H:i:s');
+                $count[] = "IT-".($index+1)."-".Carbon::createFromFormat('Y-m-d H:i:s', $iteration->updated_at)->format('Y/m/d H:i:s');
 
             }
         }
@@ -48,11 +48,11 @@ class UserSearchController extends Controller
             $color = sprintf('#%06X', mt_rand(1, 0xFFFFFF));
             $tableData[$site] = [
                 'title' => $group[0]['title'],
-                 'description' => $group[0]['description'],
-                  'url' => [],
-                  'domain' => $group[0]['domain'],
-                  'ranks' => []
-                ];
+                'description' => $group[0]['description'],
+                'url' => $group[0]['url'],
+                'domain' => $group[0]['domain'],
+                'ranks' => []
+            ];
             $data = [
                 'label' => "$site",
                 'data'=> [],
@@ -66,11 +66,11 @@ class UserSearchController extends Controller
             foreach($iterations as $index => $iteration){
                 if(!is_null($iteration->search_results)){
                     $searchResults = json_decode($iteration->search_results, true);
-                    $items = collect($searchResults['result'][0]['items'])->where('domain',$site );
+                    $items = collect($searchResults['result'][0]['items'])->where('url',$site );
                     $rank = [];
                     $urls = [];
                     if(count($items) == 0){
-                         $rank[] = 'X';
+                        $rank[] = 'X';
                     }
                     foreach($items as $item){
                         $data['data'][] = [
@@ -83,7 +83,7 @@ class UserSearchController extends Controller
                     $tableData[$site]['ranks'][] = implode(',', $rank);
                 }
             }
-             $graphData[] = $data;
+            $graphData[] = $data;
         }
 
         // Box plot prepare data
@@ -101,7 +101,7 @@ class UserSearchController extends Controller
     public function analyze(Request $request){
         try {
             foreach ($request->urls as $url){
-                TextRazorSettings::setApiKey('c4fc1a9f2a97b5303ae3411ce54b328edbc54bea4c8a34c3bb630402');
+                TextRazorSettings::setApiKey(env('TEXTRAZOR_APIKEY', 'c4fc1a9f2a97b5303ae3411ce54b328edbc54bea4c8a34c3bb630402'));
                 $text = 'Barclays misled shareholders and the public about one of the biggest investments in the banks history, a BBC Panorama investigation has found.';
                 $textrazor = new TextRazor();
                 $textrazor->addExtractor('entities');

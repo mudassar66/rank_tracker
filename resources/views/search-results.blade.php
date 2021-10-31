@@ -51,7 +51,7 @@
 
                                         <tr>
                                             <td style="width: 4%;">
-                                                <input class="site" type="checkbox" checked >
+                                                <input class="site" type="checkbox" checked value="{{$search['url']}}">
                                             </td>
                                             <td style=" width: 20%;">{{$search['title']}}</td>
                                             <td style=" width: 20%; word-wrap: break-word;min-width: 160px;max-width: 160px;">{{$search['description']}}</td>
@@ -269,8 +269,6 @@
                 $.each($('input[class="site"]:checked'), function (index, checkbox) {
                     urls.push(checkbox.value);
                 });
-
-                $('#analyze_results').modal('show');
                 axios({
                     method: 'POST',
                     url: '{{url('analyze')}}'
@@ -281,6 +279,7 @@
                     .then(response => {
                         HoldOn.close();
                         analyzeModal.results = response.data.data;
+                        $('#analyze_results').modal('show');
 
                     }).catch(e => {
                     HoldOn.close();
