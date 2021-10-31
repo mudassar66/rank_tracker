@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Search;
+use http\Client\Response;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+use TextRazor;
+use TextRazorSettings;
 
 class UserSearchController extends Controller
 {
@@ -45,7 +49,7 @@ class UserSearchController extends Controller
             $tableData[$site] = [
                 'title' => $group[0]['title'],
                  'description' => $group[0]['description'],
-                  'url' => $group[0]['url'],
+                  'url' => [],
                   'domain' => $group[0]['domain'],
                   'ranks' => []
                 ];
@@ -62,7 +66,7 @@ class UserSearchController extends Controller
             foreach($iterations as $index => $iteration){
                 if(!is_null($iteration->search_results)){
                     $searchResults = json_decode($iteration->search_results, true);
-                    $items = collect($searchResults['result'][0]['items'])->where('url',$site );
+                    $items = collect($searchResults['result'][0]['items'])->where('domain',$site );
                     $rank = [];
                     $urls = [];
                     if(count($items) == 0){
@@ -92,5 +96,27 @@ class UserSearchController extends Controller
 //        echo "</pre>";
 
         return view('search-results')->with(['graphData' => ['labels' => $labels, 'datasets' => $graphData], 'tableData' => $tableData, 'total' => $total, 'completed' => $completed, 'boxpot_data'=>$boxplot_data]);
+    }
+
+    public function analyze(Request $request){
+        try {
+            foreach ($request->urls as $url){
+                TextRazorSettings::setApiKey('c4fc1a9f2a97b5303ae3411ce54b328edbc54bea4c8a34c3bb630402');
+                $text = 'Barclays misled shareholders and the public about one of the biggest investments in the banks history, a BBC Panorama investigation has found.';
+                $textrazor = new TextRazor();
+                $textrazor->addExtractor('entities');
+                $response = $textrazor->analyzeUrl($url);
+                $data = [];
+                if (isset($response['response']['entities'])) {
+                    $data[$url] = collect($response['response']['entities'])->groupBy('entityId');
+                }else{
+                    $data[$url] = [];
+                }
+            }
+            Log::info('Textrazor response', $data);
+            return response()->json(['data' => $data]);
+        }catch (\Exception $e){
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 }

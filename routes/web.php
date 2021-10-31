@@ -22,6 +22,7 @@ Route::group(['middleware' => ['web','auth']], function () {
         return view('dashboard');
     })->name('dashboard');
 
+    Route::post('/analyze', [\App\Http\Controllers\UserSearchController::class, 'analyze'])->name('analyze');
     Route::post('/task-post', [\App\Http\Controllers\UserController::class, 'taskPost'])->name('task_post');
     Route::get('/search-results/{id}', [\App\Http\Controllers\UserSearchController::class, 'index'])->name('search_results');
 });
