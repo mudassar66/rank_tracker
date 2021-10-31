@@ -50,7 +50,7 @@
 
                                         <tr>
                                             <td style="width: 4%;">
-                                                <input class="site" type="checkbox" checked onchange="dataDisplay(event, '{{$search['url']}}')" >
+                                                <input class="site" type="checkbox" checked >
                                             </td>
                                             <td style=" width: 20%;">{{$search['title']}}</td>
                                             <td style=" width: 20%; word-wrap: break-word;min-width: 160px;max-width: 160px;">{{$search['description']}}</td>
