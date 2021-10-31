@@ -134,10 +134,11 @@
                         legend: {
                             position: 'top',
                         },
-                        title: {
-                            display: true,
-                            text: 'Chart.js Box Plot Chart',
-                        },
+                        scales: {
+                            yAxis: {
+                                display: false,
+                            }
+                        }
                     },
                 });
 
@@ -221,34 +222,33 @@
             //       lineChart.update();
             // }
             //
-            // $("#select").on('click', function() {
-            // 	$('.site').prop('checked', true);
-            // 	lineChart.data.datasets.forEach(function(ds) {
-            //             ds.hidden = false;
-            //
-            //       });
-            //       lineChart.update();
-            // });
-            //
-            // $("#unselect").on('click',function() {
-            // 	$('.site').prop('checked', false);
-            // 		lineChart.data.datasets.forEach(function(ds) {
-            //             ds.hidden = true;
-            //
-            //       });
-            //       lineChart.update();
-            // });
-            //
-            // function displayUrls(urls){
-            //     console.log(urls);
-            //      $('#urls').html('');
-            //     var html = '';
-            //     $.each(urls, function(index, url){
-            //         html += '<div style="width=100%"><a href="'+url+'">'+url+'</a></div><hr>'
-            //     });
-            //     $('#urls').html(html);
-            //     $('#exampleModal').modal('show');
-            // }
+            $("#select").on('click', function() {
+            	$('.site').prop('checked', true);
+                window.myBar.data.datasets.forEach(function(ds) {
+                    ds.hidden = false;
+                });
+                window.myBar.update();
+            });
+
+            $("#unselect").on('click',function() {
+            	$('.site').prop('checked', false);
+                    window.myBar.data.datasets.forEach(function(ds) {
+                        ds.hidden = true;
+
+                    });
+                window.myBar.update();
+            });
+
+            function displayUrls(urls){
+                console.log(urls);
+                 $('#urls').html('');
+                var html = '';
+                $.each(urls, function(index, url){
+                    html += '<div style="width=100%"><a href="'+url+'">'+url+'</a></div><hr>'
+                });
+                $('#urls').html(html);
+                $('#exampleModal').modal('show');
+            }
 
 
         </script>
