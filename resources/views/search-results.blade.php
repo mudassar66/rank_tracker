@@ -145,7 +145,7 @@
                         indexAxis: 'y',
                         responsive: true,
                         legend: {
-                            position: 'top',
+                            display: false
                         },
                         scales: {
                             yAxis: {
