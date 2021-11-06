@@ -63,6 +63,7 @@ class UserSearchController extends Controller
                 'backgroundColor' => $color
             ];
             $labels[] = $group[0]['url'];
+
             foreach($iterations as $index => $iteration){
                 if(!is_null($iteration->search_results)){
                     $searchResults = json_decode($iteration->search_results, true);
@@ -73,6 +74,8 @@ class UserSearchController extends Controller
                         $rank[] = 'X';
                     }
                     foreach($items as $item){
+                        if($item['type'] != 'organic')
+                            continue;
                         $data['data'][] = [
                             'x' =>"IT-".($index+1)."-".Carbon::createFromFormat('Y-m-d H:i:s', $iteration->updated_at)->format('Y/m/d H:i:s'),
                             'y' =>  $item['rank_absolute']
