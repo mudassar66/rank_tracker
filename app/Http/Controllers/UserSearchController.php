@@ -75,9 +75,9 @@ class UserSearchController extends Controller
                     foreach($items as $item){
                         $data['data'][] = [
                             'x' =>"IT-".($index+1)."-".Carbon::createFromFormat('Y-m-d H:i:s', $iteration->updated_at)->format('Y/m/d H:i:s'),
-                            'y' =>  $item['rank_group']
+                            'y' =>  $item['rank_absolute']
                         ];
-                        $rank[] = $item['rank_group'];
+                        $rank[] = $item['rank_absolute'];
 //                        $tableData[$site]['url'][] = $item['url'];
                     }
                     $tableData[$site]['ranks'][] = implode(',', $rank);
