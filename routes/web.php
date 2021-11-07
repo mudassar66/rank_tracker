@@ -22,9 +22,11 @@ Route::group(['middleware' => ['web','auth']], function () {
         return view('dashboard');
     })->name('dashboard');
 
-    Route::post('/analyze', [\App\Http\Controllers\UserSearchController::class, 'analyze'])->name('analyze');
+    Route::post('/analyze/{id}', [\App\Http\Controllers\UserSearchController::class, 'analyze'])->name('analyze');
     Route::post('/task-post', [\App\Http\Controllers\UserController::class, 'taskPost'])->name('task_post');
     Route::get('/search-results/{id}', [\App\Http\Controllers\UserSearchController::class, 'index'])->name('search_results');
+    Route::get('/analyzer-results/{id}', [\App\Http\Controllers\UserSearchController::class, 'indexAnalyzerResults'])->name('analyzer_results');
+    Route::post('/get-analyzer-results', [\App\Http\Controllers\UserSearchController::class, 'getAnalyzerResults'])->name('get-analyzer_results');
 });
 
 //Route::post('/postbackscript', [\App\Http\Controllers\UserController::class, 'taskPostBackScript'])->name('post');
