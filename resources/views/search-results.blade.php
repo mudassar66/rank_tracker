@@ -40,6 +40,7 @@
                         <button class="btn btn-success" id="analyze">Analyze</button>
                         <form method="POST" action="{{ route('analyze', ['id' => $id]) }}" id="analyze_form">
                             @csrf
+                            <input id="renew_all" type="checkbox" name="renew_all" value="1"/><lable style="padding-left: 5px">Re-new All Analyzer Results</lable>
                             <x-input id="selected_urls" type="hidden" name="urls"/>
                         </form>
                     </div>

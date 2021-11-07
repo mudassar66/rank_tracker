@@ -105,20 +105,18 @@ class UserSearchController extends Controller
 
     public function analyze(Request $request, $id){
         try {
-
             foreach (json_decode($request->urls) as $url){
                 foreach (AnalyzerResult::$analyzers as $analyzer){
                     $result = AnalyzerResult::where('analyzer', $analyzer)->where('url', $url)->first();
-                    if(empty($result)){
+                    if(empty($result) || $request->has('renew_all')){
                         $analyzerHelper = new AnalyzerHelper();
                         switch ($analyzer){
                             case AnalyzerResult::$TEXT_RAZOR:
                                 $response = $analyzerHelper->getTextRazorResults($url);
-                                $a = AnalyzerResult::create([
+                                $a = AnalyzerResult::UpdateOrCreate([
                                     'url' => $url,
                                     'analyzer' => $analyzer,
-                                    'results' => $response
-                                ]);
+                                ], ['results' => $response]);
                                 break;
                             case AnalyzerResult::$WATSON:
                                 break;
@@ -146,7 +144,19 @@ class UserSearchController extends Controller
                     if($result->analyzer == AnalyzerResult::$TEXT_RAZOR){
                         $response = $result->results;
                         if (isset($response['response']['entities'])) {
-                            $data[$url][$result->analyzer] = collect($response['response']['entities'])->groupBy('entityId');
+                            $groupEntities = collect($response['response']['entities'])->groupBy('entityId');
+                            $entitiesData = [];
+                            foreach ($groupEntities as $entity => $entityData){
+                               $first = $entityData->first();
+                                $entitiesData[] = [
+                                    'entity' => $entity,
+                                    'type' => ($first['type'] ?? []),
+                                    'confidenceScore' => ($first['confidenceScore'] ?? ''),
+                                    'relevanceScore' => ($first['relevanceScore'] ?? ''),
+                                    'count' => count($entityData),
+                                ];
+                            }
+                            $data[$url][$result->analyzer] = $entitiesData;
                         }else{
                             $data[$url][$result->analyzer] = [];
                         }

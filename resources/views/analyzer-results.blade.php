@@ -26,10 +26,24 @@
                                     <div v-for="(entities, analyzer) in analyzers" class="card" >
                                         <div class="card-body">
                                             <h3 class="card-title"><b>@{{ analyzer }}</b></h3>
-                                            <span v-for="(data, entity) in entities">
-                                                @{{entity}}(@{{data.length}}) ,
-                                            </span>
-                                        </div>
+                                            <table  class="table table-bordered"  style=" width: 100%;">
+                                                <thead style=" width: 100%;" class="thead-light">
+                                                <tr>
+                                                    <th>Entity</th>
+                                                    <th>Confidence Score</th>
+                                                    <th>Relevance Score</th>
+                                                    <th>Entity Type</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr  v-for="(data, entity) in _.orderBy(entities, ['count'], ['desc'])">
+                                                        <td>@{{data.entity}}</td>
+                                                        <td>@{{data.confidenceScore}}</td>
+                                                        <td>@{{data.relevanceScore}}</td>
+                                                        <td>@{{data.type}}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
                                     </div>
                                 </div>
                             </div>
