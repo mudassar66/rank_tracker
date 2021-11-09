@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\AnalyzerHelper;
+use App\Models\AnalyzerResult;
 use App\Models\Search;
 use http\Client\Response;
 use Illuminate\Http\Request;
@@ -98,28 +100,74 @@ class UserSearchController extends Controller
 //        print_r($graphData);
 //        echo "</pre>";
 
-        return view('search-results')->with(['graphData' => ['labels' => $count, 'datasets' => $graphData], 'tableData' => $tableData, 'total' => $total, 'completed' => $completed, 'boxpot_data'=>$boxplot_data, 'boxpot_data_labels'=>$labels]);
+        return view('search-results')->with(['id' => $id,'graphData' => ['labels' => $count, 'datasets' => $graphData], 'tableData' => $tableData, 'total' => $total, 'completed' => $completed, 'boxpot_data'=>$boxplot_data, 'boxpot_data_labels'=>$labels]);
     }
 
-    public function analyze(Request $request){
+    public function analyze(Request $request, $id){
         try {
-            foreach ($request->urls as $url){
-                TextRazorSettings::setApiKey(env('TEXTRAZOR_APIKEY', 'c4fc1a9f2a97b5303ae3411ce54b328edbc54bea4c8a34c3bb630402'));
-                $text = 'Barclays misled shareholders and the public about one of the biggest investments in the banks history, a BBC Panorama investigation has found.';
-                $textrazor = new TextRazor();
-                $textrazor->addExtractor('entities');
-                $response = $textrazor->analyzeUrl($url);
-                $data = [];
-                if (isset($response['response']['entities'])) {
-                    $data[$url] = collect($response['response']['entities'])->groupBy('entityId');
-                }else{
-                    $data[$url] = [];
+            foreach (json_decode($request->urls) as $url){
+                foreach (AnalyzerResult::$analyzers as $analyzer){
+                    $result = AnalyzerResult::where('analyzer', $analyzer)->where('url', $url)->first();
+                    if(empty($result) || $request->has('renew_all')){
+                        $analyzerHelper = new AnalyzerHelper();
+                        switch ($analyzer){
+                            case AnalyzerResult::$TEXT_RAZOR:
+                                $response = $analyzerHelper->getTextRazorResults($url);
+                                $a = AnalyzerResult::UpdateOrCreate([
+                                    'url' => $url,
+                                    'analyzer' => $analyzer,
+                                ], ['results' => $response]);
+                                break;
+                            case AnalyzerResult::$WATSON:
+                                break;
+                        }
+                    }
                 }
             }
-            Log::info('Textrazor response', $data);
-            return response()->json(['data' => $data]);
+            return view('analyzer-results')->with(['id'=> $id, 'urls' => json_decode($request->urls)]);
+//            return redirect(route('analyzer_results', ['id' => $id]));
         }catch (\Exception $e){
-            return response()->json(['message' => $e->getMessage()], 500);
+            return redirect()->back()->withErrors([$e->getMessage()]);
         }
+    }
+
+    public function indexAnalyzerResults($id){
+        return view('analyzer-results')->with(['id'=> $id]);
+    }
+
+    public function getAnalyzerResults(Request $request){
+        try{
+            $urls = AnalyzerResult::whereIn('url', $request->urls)->get()->groupBy('url');
+            $data = [];
+            foreach ($urls as $url => $results){
+                foreach ($results as $result){
+                    if($result->analyzer == AnalyzerResult::$TEXT_RAZOR){
+                        $response = $result->results;
+                        if (isset($response['response']['entities'])) {
+                            $groupEntities = collect($response['response']['entities'])->groupBy('entityId');
+                            $entitiesData = [];
+                            foreach ($groupEntities as $entity => $entityData){
+                               $first = $entityData->first();
+                                $entitiesData[] = [
+                                    'entity' => $entity,
+                                    'type' => ($first['type'] ?? []),
+                                    'confidenceScore' => ($first['confidenceScore'] ?? ''),
+                                    'relevanceScore' => ($first['relevanceScore'] ?? ''),
+                                    'count' => count($entityData),
+                                ];
+                            }
+                            $data[$url][$result->analyzer] = $entitiesData;
+                        }else{
+                            $data[$url][$result->analyzer] = [];
+                        }
+                    }
+                }
+            }
+            return response()->json(['data' => $data]);
+        }
+       catch (\Exception $e){
+           return response()->json(['message' => $e->getMessage()], 500);
+       }
+
     }
 }

@@ -38,6 +38,11 @@
                         <button class="btn btn-primary" id="select">Select All</button>
                         <button class="btn btn-warning" id="unselect">Unselect All</button>
                         <button class="btn btn-success" id="analyze">Analyze</button>
+                        <form method="POST" action="{{ route('analyze', ['id' => $id]) }}" id="analyze_form">
+                            @csrf
+                            <input id="renew_all" type="checkbox" name="renew_all" value="1"/><lable style="padding-left: 5px">Re-new All Analyzer Results</lable>
+                            <x-input id="selected_urls" type="hidden" name="urls"/>
+                        </form>
                     </div>
                     <div class="pt-2">
 
@@ -120,7 +125,6 @@
                 el: '#analyze_results',
                 data: {
                     results:{}
-
                 }
                 });
         </script>
@@ -230,11 +234,7 @@
             var lineChart = new Chart(speedCanvas, config);
 
             function dataDisplay(event, label){
-                console.log(label);
-                console.log(event.target.checked);
                  lineChart.data.datasets.forEach(function(ds) {
-
-
             	     if(ds.label == label){
 
             	        if(event.target.checked){
@@ -267,7 +267,6 @@
             });
 
             function displayUrls(urls){
-                console.log(urls);
                  $('#urls').html('');
                 var html = '';
                 $.each(urls, function(index, url){
@@ -278,32 +277,32 @@
             }
 
             $("#analyze").on('click', function () {
-                // HoldOn.open();
                 var urls = [];
                 $.each($('input[class="site"]:checked'), function (index, checkbox) {
                     urls.push(checkbox.value);
                 });
-                axios({
-                    method: 'POST',
-                    url: '{{url('analyze')}}'
-                    , data: {
-                        urls: urls,
-                    }
-                })
-                    .then(response => {
-                        HoldOn.close();
-                        analyzeModal.results = response.data.data;
-                        $('#analyze_results').modal('show');
-
-                    }).catch(e => {
-                    HoldOn.close();
+                if(urls.length == 0){
                     swal({
                         title: "Error",
-                        text: e.response.data.message,
+                        text: "Please select any result first",
                         icon: "error",
                     });
-                });
+                }else{
+                    swal({
+                        title: "Are you sure?",
+                        icon: "warning",
+                        buttons: true,
+                        dangerMode: true,
+                    })
+                        .then((confirm) => {
+                            if (confirm) {
+                                $('#selected_urls').val(JSON.stringify(urls));
+                                HoldOn.open();
+                                $('#analyze_form').submit();
+                            }
+                        });
 
+                }
             });
 
 
