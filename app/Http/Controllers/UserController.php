@@ -133,6 +133,7 @@ class UserController extends Controller
             }
 
             $response = $client->taskPost($requestData);
+            dd($response);
             if($response->successful()){
                 $resData = json_decode($response->body(), true);
                 if(isset($resData['status_code'])){
