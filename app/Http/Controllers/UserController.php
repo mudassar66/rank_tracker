@@ -150,6 +150,7 @@ class UserController extends Controller
                         Flash::error($resData['status_message']);
                     }
                 }else{
+                    Log::info($resData);
                     Flash::error('Something went wrong.');
                 }
 
