@@ -18,6 +18,7 @@
                                 <h5 class="mb-0">
 {{--                                    <button class="btn btn-link" type="button" data-toggle="collapse" :data-target="'#collapse'+url" aria-expanded="true":aria-controls="'collapse'+url">--}}
                                       <a :href="url" target="_blank">@{{ url }}</a>
+                                    <button type="button" class="btn btn-sm btn-info pull-right" @click="reanalyzeUrl(url)">Re-Analyze</button>
                                     {{--                                    </button>--}}
                                 </h5>
                             </div>
@@ -40,7 +41,17 @@
                                                         <td>@{{data.entity}}</td>
                                                         <td>@{{data.confidenceScore}}</td>
                                                         <td>@{{data.relevanceScore}}</td>
-                                                        <td>@{{data.type}}</td>
+                                                        <td>
+                                                            <div>
+                                                                <span><b>Types:</b></span>
+                                                                @{{data.type}}
+                                                            </div>
+                                                            <div>
+                                                                <span><b>Freebase Types: </b></span>
+                                                                @{{data.freebaseTypes}}
+                                                            </div>
+
+                                                        </td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -83,6 +94,36 @@
                                 text: e.response.data.message,
                                 icon: "error",
                             });
+                        });
+                    },
+                    reanalyzeUrl(url){
+                        var that = this;
+                        swal({
+                            title: "Are you sure?",
+                            icon: "warning",
+                            buttons: true,
+                            dangerMode: true,
+                        }).then((confirm) => {
+                            if (confirm) {
+                                HoldOn.open();
+                                axios({
+                                    method: 'POST',
+                                    url: '{{url('reanalyze-url')}}'
+                                    , data: {
+                                        'url' : url
+                                    }
+                                }).then(response => {
+                                    HoldOn.close();
+                                    that.results[url] = response.data.data;
+                                }).catch(e => {
+                                HoldOn.close();
+                                swal({
+                                    title: "Error",
+                                    text: e.response.data.message,
+                                    icon: "error",
+                                });
+                                });
+                            }
                         });
                     }
                 },
