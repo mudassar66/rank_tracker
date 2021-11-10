@@ -150,12 +150,7 @@ class UserSearchController extends Controller
                             'analyzer' => $analyzer,
                         ], ['results' => $response]);
                         if (isset($response['response']['entities'])) {
-                            $groupEntities = collect($response['response']['entities'])->groupBy('entityId');
-                            $entitiesData = [];
-                            foreach ($groupEntities as $entity => $entityData) {
-                                $entitiesData[] = $this->setEntityData($entity, $entityData);
-                            }
-                            $analyzerData[$result->analyzer] = $entitiesData;
+                            $analyzerData[$result->analyzer] = $this->setEntityData($response['response']['entities']);
                         } else {
                             $analyzerData[$result->analyzer] = [];
                         }
@@ -188,14 +183,7 @@ class UserSearchController extends Controller
                     if ($result->analyzer == AnalyzerResult::$TEXT_RAZOR) {
                         $response = $result->results;
                         if (isset($response['response']['entities'])) {
-                            $groupEntities = collect($response['response']['entities'])->reject(function ($value, $key) {
-                                return (isset($value['type']) && !empty(array_intersect(['Number', 'Duration', 'Distance'], $value['type'])));
-                            })->groupBy('entityId');
-                            $entitiesData = [];
-                            foreach ($groupEntities as $entity => $entityData) {
-                                $entitiesData[] = $this->setEntityData($entity, $entityData);
-                            }
-                            $analyzerData[$result->analyzer] = $entitiesData;
+                            $analyzerData[$result->analyzer] = $this->setEntityData($response['response']['entities']);
                         } else {
                             $analyzerData[$result->analyzer] = [];
                         }
@@ -211,16 +199,23 @@ class UserSearchController extends Controller
     }
 
 
-    public function setEntityData($entity, $entityData){
-        $first = $entityData->first();
-        return [
-            'entity' => $entity,
-            'type' => ($first['type'] ?? []),
-            'freebaseTypes' => ($first['freebaseTypes'] ?? []),
-            'confidenceScore' => ($first['confidenceScore'] ?? ''),
-            'relevanceScore' => ($first['relevanceScore'] ?? ''),
-            'count' => count($entityData),
-        ];
+    public function setEntityData($entities){
+        $groupEntities = collect($entities)->reject(function ($value, $key) {
+            return is_numeric($value['entityId']);
+        })->groupBy('entityId');
+        $entitiesData = [];
+        foreach ($groupEntities as $entity => $entityData) {
+            $first = $entityData->first();
+            $entitiesData[]= [
+                'entity' => $entity,
+                'type' => ($first['type'] ?? []),
+                'freebaseTypes' => ($first['freebaseTypes'] ?? []),
+                'confidenceScore' => ($first['confidenceScore'] ?? ''),
+                'relevanceScore' => ($first['relevanceScore'] ?? ''),
+                'count' => count($entityData),
+            ];
+        }
+        return $entitiesData;
     }
 
 
