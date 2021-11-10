@@ -139,6 +139,7 @@ class UserSearchController extends Controller
         try {
             $url = $request->url;
             $data = [];
+            $analyzerData = [];
             foreach (AnalyzerResult::$analyzers as $analyzer) {
                 $analyzerHelper = new AnalyzerHelper();
                 switch ($analyzer) {
@@ -154,15 +155,16 @@ class UserSearchController extends Controller
                             foreach ($groupEntities as $entity => $entityData) {
                                 $entitiesData[] = $this->setEntityData($entity, $entityData);
                             }
-                            $data[$result->analyzer] = $entitiesData;
+                            $analyzerData[$result->analyzer] = $entitiesData;
                         } else {
-                            $data[$url][$result->analyzer] = [];
+                            $analyzerData[$result->analyzer] = [];
                         }
                         break;
                     case AnalyzerResult::$WATSON:
                         break;
                 }
             }
+            $data = ['url' => $url, 'data' => $analyzerData];
             return response()->json(['data' => $data]);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
@@ -181,21 +183,25 @@ class UserSearchController extends Controller
             $urls = AnalyzerResult::whereIn('url', $request->urls)->get()->groupBy('url');
             $data = [];
             foreach ($urls as $url => $results) {
+                $analyzerData = [];
                 foreach ($results as $result) {
                     if ($result->analyzer == AnalyzerResult::$TEXT_RAZOR) {
                         $response = $result->results;
                         if (isset($response['response']['entities'])) {
-                            $groupEntities = collect($response['response']['entities'])->groupBy('entityId');
+                            $groupEntities = collect($response['response']['entities'])->reject(function ($value, $key) {
+                                return (isset($value['type']) && !empty(array_intersect(['Number', 'Duration', 'Distance'], $value['type'])));
+                            })->groupBy('entityId');
                             $entitiesData = [];
                             foreach ($groupEntities as $entity => $entityData) {
                                 $entitiesData[] = $this->setEntityData($entity, $entityData);
                             }
-                            $data[$url][$result->analyzer] = $entitiesData;
+                            $analyzerData[$result->analyzer] = $entitiesData;
                         } else {
-                            $data[$url][$result->analyzer] = [];
+                            $analyzerData[$result->analyzer] = [];
                         }
                     }
                 }
+                $data[] = ['url' => $url, 'data' => $analyzerData];
             }
             return response()->json(['data' => $data]);
         } catch (\Exception $e) {

@@ -7,30 +7,33 @@
     </x-slot>
     @include('message')
     @include('errors')
+
     <div class="py-3" id="analyzer_results">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
                     <h1 class="font-semibold text-xl text-gray-800 leading-tight mb-2">Results</h1>
                     <div class="accordion" id="accordionResults">
-                        <div v-for="(analyzers, url) in results" class="card">
-                            <div class="card-header" :id="'heading-'+url">
+                        <div v-for="(analyzers, index) in results" class="card">
+                            <div class="card-header" :id="'heading-'+index">
                                 <h5 class="mb-0">
-{{--                                    <button class="btn btn-link" type="button" data-toggle="collapse" :data-target="'#collapse'+url" aria-expanded="true":aria-controls="'collapse'+url">--}}
-                                      <a :href="url" target="_blank">@{{ url }}</a>
-                                    <button type="button" class="btn btn-sm btn-info pull-right" @click="reanalyzeUrl(url)">Re-Analyze</button>
-                                    {{--                                    </button>--}}
+                                    <button class="btn btn-link" type="button" data-toggle="collapse" :data-target="'#collapse'+index" aria-expanded="true" :aria-controls="'collapse'+index">
+                                      @{{ analyzers.url }}
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-info pull-right" @click="reanalyzeUrl(analyzers.url, index)">Re-Analyze</button>
+
                                 </h5>
                             </div>
-                            <div :id="'collapse'+url" class="collapse show" :aria-labelledby="'heading-'+url" data-parent="#accordionResults">
+                            <div :id="'collapse'+index" class="collapse show" :aria-labelledby="'heading-'+index" data-parent="#accordionResults">
                                 <div class="card-body">
-                                    <div v-for="(entities, analyzer) in analyzers" class="card" >
+                                    <div v-for="(entities, analyzer) in analyzers.data" class="card" >
                                         <div class="card-body">
                                             <h3 class="card-title"><b>@{{ analyzer }}</b></h3>
                                             <table  class="table table-bordered"  style=" width: 100%;">
                                                 <thead style=" width: 100%;" class="thead-light">
                                                 <tr>
                                                     <th>Entity</th>
+                                                    <th>Frequency</th>
                                                     <th>Confidence Score</th>
                                                     <th>Relevance Score</th>
                                                     <th>Entity Type</th>
@@ -39,6 +42,7 @@
                                                 <tbody>
                                                     <tr  v-for="(data, entity) in _.orderBy(entities, ['count'], ['desc'])">
                                                         <td>@{{data.entity}}</td>
+                                                        <td>@{{data.count}}</td>
                                                         <td>@{{data.confidenceScore}}</td>
                                                         <td>@{{data.relevanceScore}}</td>
                                                         <td>
@@ -72,7 +76,8 @@
                 el: '#analyzer_results',
                 data: {
                     results:{},
-                    urls : {!! json_encode($urls) !!}
+                    urls : {!! json_encode($urls) !!},
+                    count : 0
                 },
                 methods : {
                     getAnalyzerResults(){
@@ -96,7 +101,7 @@
                             });
                         });
                     },
-                    reanalyzeUrl(url){
+                    reanalyzeUrl(url, index){
                         var that = this;
                         swal({
                             title: "Are you sure?",
@@ -114,7 +119,8 @@
                                     }
                                 }).then(response => {
                                     HoldOn.close();
-                                    that.results[url] = response.data.data;
+                                    that.results[index] = response.data.data;
+                                    console.log(that.results);
                                 }).catch(e => {
                                 HoldOn.close();
                                 swal({
@@ -125,10 +131,21 @@
                                 });
                             }
                         });
+                    },
+                    incrementCount(){
+                        this.count += 1;
+                        console.log(this.count);
                     }
                 },
                 mounted(){
                     this.getAnalyzerResults();
+                },
+                computed : {
+                    incrementCount: function(){
+                        // this.count = this.count+ 1;
+                        // console.log(this.count);
+                        return this.count;
+                    }
                 }
             });
         </script>
