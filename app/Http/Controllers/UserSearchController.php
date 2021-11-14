@@ -108,6 +108,7 @@ class UserSearchController extends Controller
 
     public function analyze(Request $request, $id)
     {
+
         try {
             foreach (json_decode($request->urls) as $url) {
                 foreach (AnalyzerResult::$analyzers as $analyzer) {
@@ -189,6 +190,11 @@ class UserSearchController extends Controller
             foreach ($urls as $url => $results) {
                 $analyzerData = [];
                 foreach ($results as $result) {
+                    $html = $result->html;
+                    if(empty($html)){
+                        $html = $this->getHtml($result->url);
+                        $result->update(['html' => $html]);
+                    }
                     if ($result->analyzer == AnalyzerResult::$TEXT_RAZOR) {
                         $analyzerData[AnalyzerResult::$TEXT_RAZOR] = $this->setEntityData($result);
                     }
@@ -211,11 +217,7 @@ class UserSearchController extends Controller
             $groupEntities = collect($entities)->reject(function ($value, $key) {
                 return is_numeric($value['entityId']);
             })->groupBy('entityId');
-            $html = $result->html;
-            if(empty($html)){
-                $html = $this->getHtml($result->url);
-                $result->update(['html' => $html]);
-            }
+        
             foreach ($groupEntities as $entity => $entityData) {
                 $first = $entityData->first();
             
@@ -227,7 +229,7 @@ class UserSearchController extends Controller
                     'confidenceScore' => ($first['confidenceScore'] ?? ''),
                     'relevanceScore' => ($first['relevanceScore'] ?? ''),
                     'count' => count($entityData),
-                    'htmlCount' => $this->getCountInHtml($html, $first['matchedText'])
+                    'htmlCount' => $this->getCountInHtml($result->html, $first['matchedText'])
                 ];
             }
         }
@@ -266,15 +268,18 @@ class UserSearchController extends Controller
 
 
     public function getHtmlText($node, &$text){
-        if(get_class($node) == "PHPHtmlParser\Dom\Node\HtmlNode"){
-            if(trim($node->text) != ""){
-                $text[] = trim($node->text);
-            }
-            $children = $node->getChildren();
-            foreach($children as $childNode){
-                $this->getHtmlText($childNode, $text);
+        if($node){
+            if(get_class($node) == "PHPHtmlParser\Dom\Node\HtmlNode"){
+                if(trim($node->text) != ""){
+                    $text[] = trim($node->text);
+                }
+                $children = $node->getChildren();
+                foreach($children as $childNode){
+                    $this->getHtmlText($childNode, $text);
+                }
             }
         }
+    
         
     }
 

@@ -20,8 +20,8 @@
                                     <button class="btn btn-link" type="button" data-toggle="collapse" :data-target="'#collapse'+index" aria-expanded="true" :aria-controls="'collapse'+index">
                                       @{{ analyzers.url }}
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-info pull-right" @click="reanalyzeUrl(analyzers.url, index)">Re-Analyze</button>
-
+                                    <button style="margin-left: 3px;" type="button" class="btn btn-sm btn-info pull-right" @click="reanalyzeUrl(analyzers.url, index)">Re-Analyze</button>
+                                    <a :href="''+analyzers.url" target="_blank" class="btn btn-sm btn-info pull-right">View Link</a>
                                 </h5>
                             </div>
                             <div :id="'collapse'+index" class="collapse show" :aria-labelledby="'heading-'+index" data-parent="#accordionResults">
@@ -34,7 +34,7 @@
                                                 <tr>
                                                     <th>Entity</th>
                                                     <th>Matched Text</th>
-                                                    <th>Amazon Frequency</th>
+                                                    <th>Analyzer Frequency</th>
                                                     <th>Custom Frequency</th>
                                                     <th>Confidence Score</th>
                                                     <th>Relevance Score</th>
@@ -85,7 +85,7 @@
                                 <thead style=" width: 100%;" class="thead-light">
                                 <tr>
                                     <th>Entity</th>
-                                    <th>Amazon Frequency</th>
+                                    <th>Analyzer Frequency</th>
                                     <th>Custom Frequency</th>
                                 </tr>
                                 </thead>
