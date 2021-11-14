@@ -23,12 +23,14 @@ class AnalyzerResult extends Model
         'url',
         'analyzer',
         'results' ,
+        'html'
     ];
 
     public $casts = [
         'url' => 'string',
         'analyzer' => 'string',
-        'results' => 'json'
+        'results' => 'json',
+        'html' => 'string'
     ];
 
 }

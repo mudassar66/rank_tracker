@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use TextRazor;
 use TextRazorSettings;
+use PHPHtmlParser\Dom;
 
 class UserSearchController extends Controller
 {
@@ -104,6 +105,7 @@ class UserSearchController extends Controller
         return view('search-results')->with(['id' => $id, 'graphData' => ['labels' => $count, 'datasets' => $graphData], 'tableData' => $tableData, 'total' => $total, 'completed' => $completed, 'boxpot_data' => $boxplot_data, 'boxpot_data_labels' => $labels]);
     }
 
+
     public function analyze(Request $request, $id)
     {
         try {
@@ -115,10 +117,14 @@ class UserSearchController extends Controller
                         switch ($analyzer) {
                             case AnalyzerResult::$TEXT_RAZOR:
                                 $response = $analyzerHelper->getTextRazorResults($url);
+                                $html = $this->getHtml($url);
                                 $a = AnalyzerResult::UpdateOrCreate([
                                     'url' => $url,
                                     'analyzer' => $analyzer,
-                                ], ['results' => $response]);
+                                ], [
+                                    'results' => $response,
+                                    'html' => $html
+                                ]);
                                 break;
                             case AnalyzerResult::$WATSON:
                                 break;
@@ -145,12 +151,16 @@ class UserSearchController extends Controller
                 switch ($analyzer) {
                     case AnalyzerResult::$TEXT_RAZOR:
                         $response = $analyzerHelper->getTextRazorResults($url);
+                        $html = $this->getHtml($url);
                         $result = AnalyzerResult::UpdateOrCreate([
                             'url' => $url,
                             'analyzer' => $analyzer,
-                        ], ['results' => $response]);
+                        ], [
+                            'results' => $response,
+                            'html' => $html
+                        ]);
                         if (isset($response['response']['entities'])) {
-                            $analyzerData[$result->analyzer] = $this->setEntityData($response['response']['entities']);
+                            $analyzerData[$result->analyzer] = $this->setEntityData($result);
                         } else {
                             $analyzerData[$result->analyzer] = [];
                         }
@@ -172,8 +182,7 @@ class UserSearchController extends Controller
         return view('analyzer-results')->with(['id' => $id]);
     }
 
-    public function getAnalyzerResults(Request $request)
-    {
+    public function getAnalyzerResults(Request $request){
         try {
             $urls = AnalyzerResult::whereIn('url', $request->urls)->get()->groupBy('url');
             $data = [];
@@ -181,42 +190,92 @@ class UserSearchController extends Controller
                 $analyzerData = [];
                 foreach ($results as $result) {
                     if ($result->analyzer == AnalyzerResult::$TEXT_RAZOR) {
-                        $response = $result->results;
-                        if (isset($response['response']['entities'])) {
-                            $analyzerData[$result->analyzer] = $this->setEntityData($response['response']['entities']);
-                        } else {
-                            $analyzerData[$result->analyzer] = [];
-                        }
+                        $analyzerData[AnalyzerResult::$TEXT_RAZOR] = $this->setEntityData($result);
                     }
                 }
                 $data[] = ['url' => $url, 'data' => $analyzerData];
             }
-            return response()->json(['data' => $data]);
+    
+            $collectiveData = $this->setCollectiveData($data);
+            return response()->json(['data' => $data, 'collectiveData' => $collectiveData]);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
 
     }
-
-
-    public function setEntityData($entities){
-        $groupEntities = collect($entities)->reject(function ($value, $key) {
-            return is_numeric($value['entityId']);
-        })->groupBy('entityId');
+    public function setEntityData($result){
+        $response = $result->results;
         $entitiesData = [];
-        foreach ($groupEntities as $entity => $entityData) {
-            $first = $entityData->first();
-            $entitiesData[]= [
-                'entity' => $entity,
-                'type' => ($first['type'] ?? []),
-                'freebaseTypes' => ($first['freebaseTypes'] ?? []),
-                'confidenceScore' => ($first['confidenceScore'] ?? ''),
-                'relevanceScore' => ($first['relevanceScore'] ?? ''),
-                'count' => count($entityData),
-            ];
+        if (isset($response['response']['entities'])) {
+            $entities = $response['response']['entities'];
+            $groupEntities = collect($entities)->reject(function ($value, $key) {
+                return is_numeric($value['entityId']);
+            })->groupBy('entityId');
+            $html = $result->html;
+            if(empty($html)){
+                $html = $this->getHtml($result->url);
+                $result->update(['html' => $html]);
+            }
+            foreach ($groupEntities as $entity => $entityData) {
+                $first = $entityData->first();
+            
+                $entitiesData[]= [
+                    'entity' => $entity,
+                    'matchedText' => $first['matchedText'],
+                    'type' => ($first['type'] ?? []),
+                    'freebaseTypes' => ($first['freebaseTypes'] ?? []),
+                    'confidenceScore' => ($first['confidenceScore'] ?? ''),
+                    'relevanceScore' => ($first['relevanceScore'] ?? ''),
+                    'count' => count($entityData),
+                    'htmlCount' => $this->getCountInHtml($html, $first['matchedText'])
+                ];
+            }
         }
         return $entitiesData;
     }
 
+    public function setCollectiveData($data){
+        $mergedData = [];
+        collect($data)->pluck('data.TEXTRAZOR')->map(function( $value, $key) use (&$mergedData){
+            $mergedData = array_merge($value, $mergedData);
+        });
+        $data = [];
+        collect($mergedData)->groupBy('entity')->each(function($item, $key) use(&$data){
+            $data[$key] = ['count' => [$item->min('count'), $item->max('count')],
+            'htmlCount' => [$item->min('htmlCount'), $item->max('htmlCount')]
+        ];
+        });
+        return $data;
+    }
+
+    public function getHtml($url){
+        $dom = new Dom;
+        $dom->loadFromUrl($url);
+        return $dom->outerHtml;
+    }
+
+    public function getCountInHtml($html, $entity){
+        $dom = new Dom;
+        $dom->loadStr($html);
+        $text = [];
+        $this->getHtmlText($dom->find('body')[0], $text);
+        // if(strtolower($entity) == 'projectors')
+        //     dd(substr_count(strtolower(implode(' ', $text)), strtolower($entity)),strtolower(implode(' ', $text)), strtolower($entity));
+        return substr_count(strtolower(implode(' ', $text)), strtolower($entity));
+    }
+
+
+    public function getHtmlText($node, &$text){
+        if(get_class($node) == "PHPHtmlParser\Dom\Node\HtmlNode"){
+            if(trim($node->text) != ""){
+                $text[] = trim($node->text);
+            }
+            $children = $node->getChildren();
+            foreach($children as $childNode){
+                $this->getHtmlText($childNode, $text);
+            }
+        }
+        
+    }
 
 }
