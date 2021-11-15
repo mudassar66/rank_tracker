@@ -28,6 +28,7 @@ Route::group(['middleware' => ['web','auth']], function () {
     Route::get('/analyzer-results/{id}', [\App\Http\Controllers\UserSearchController::class, 'indexAnalyzerResults'])->name('analyzer_results');
     Route::post('/get-analyzer-results', [\App\Http\Controllers\UserSearchController::class, 'getAnalyzerResults'])->name('get-analyzer_results');
     Route::post('/reanalyze-url', [\App\Http\Controllers\UserSearchController::class, 'reanalyzeUrl'])->name('reanalyze_url');
+    Route::post('/export-collective-results', [\App\Http\Controllers\UserSearchController::class, 'exportCollectiveResults'])->name('export_collective_results');
 });
 
 //Route::post('/postbackscript', [\App\Http\Controllers\UserController::class, 'taskPostBackScript'])->name('post');

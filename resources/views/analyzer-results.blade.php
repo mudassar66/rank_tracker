@@ -77,7 +77,14 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
-                    <h1 class="font-semibold text-xl text-gray-800 leading-tight mb-2">Collective Results</h1>
+                    <h1 class="font-semibold text-xl text-gray-800 leading-tight mb-2">
+                        Collective Results
+                        <button style="margin-left: 3px;" type="button" onclick="$('#export_form').submit();" class="btn btn-sm btn-info pull-right" >Export</button>
+                        <form action="{{route('export_collective_results')}}" method="POST" id="export_form">
+                            @csrf()
+                            <input type="hidden" name="data" v-model="JSON.stringify(collective_results)"/>
+                        </form>          
+                    </h1>
                     <div class="card" >
                         <div class="card-body">
                         
@@ -119,6 +126,7 @@
                     getAnalyzerResults(){
                         HoldOn.open();
                         var that = this;
+                        
                         axios({
                             method: 'POST',
                             url: '{{url('get-analyzer-results')}}'
@@ -173,6 +181,27 @@
                     incrementCount(){
                         this.count += 1;
                         console.log(this.count);
+                    },
+                    exportColectiveResults(){
+                        var that = this;
+                        HoldOn.open();
+                                axios({
+                                    method: 'POST',
+                                    url: '{{url('export-collective-results')}}'
+                                    , data: {
+                                        'data' : that.collective_results
+                                    }
+                                }).then(response => {
+                                    HoldOn.close();
+                                   
+                                }).catch(e => {
+                                HoldOn.close();
+                                swal({
+                                    title: "Error",
+                                    text: e.response.data.message,
+                                    icon: "error",
+                                });
+                                });
                     }
                 },
                 mounted(){

@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Session;
 use TextRazor;
 use TextRazorSettings;
 use PHPHtmlParser\Dom;
+use App\Exports\AnalyzerResultsExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class UserSearchController extends Controller
 {
@@ -191,7 +193,7 @@ class UserSearchController extends Controller
                 $analyzerData = [];
                 foreach ($results as $result) {
                     $html = $result->html;
-                    if(empty($html)){
+                    if(empty($html) || $html == ""){
                         $html = $this->getHtml($result->url);
                         $result->update(['html' => $html]);
                     }
@@ -217,10 +219,9 @@ class UserSearchController extends Controller
             $groupEntities = collect($entities)->reject(function ($value, $key) {
                 return is_numeric($value['entityId']);
             })->groupBy('entityId');
-        
+            $text = $this->generateText($result->html);
             foreach ($groupEntities as $entity => $entityData) {
                 $first = $entityData->first();
-            
                 $entitiesData[]= [
                     'entity' => $entity,
                     'matchedText' => $first['matchedText'],
@@ -229,7 +230,7 @@ class UserSearchController extends Controller
                     'confidenceScore' => ($first['confidenceScore'] ?? ''),
                     'relevanceScore' => ($first['relevanceScore'] ?? ''),
                     'count' => count($entityData),
-                    'htmlCount' => $this->getCountInHtml($result->html, $first['matchedText'])
+                    'htmlCount' => $this->getCountInHtml($text, $first['matchedText'])
                 ];
             }
         }
@@ -256,14 +257,16 @@ class UserSearchController extends Controller
         return $dom->outerHtml;
     }
 
-    public function getCountInHtml($html, $entity){
+    public function generateText($html){
         $dom = new Dom;
         $dom->loadStr($html);
         $text = [];
         $this->getHtmlText($dom->find('body')[0], $text);
-        // if(strtolower($entity) == 'projectors')
-        //     dd(substr_count(strtolower(implode(' ', $text)), strtolower($entity)),strtolower(implode(' ', $text)), strtolower($entity));
-        return substr_count(strtolower(implode(' ', $text)), strtolower($entity));
+        return $text;
+    }
+
+    public function getCountInHtml($text, $entity){
+      return substr_count(strtolower(implode(' ', $text)), strtolower($entity));
     }
 
 
@@ -281,6 +284,11 @@ class UserSearchController extends Controller
         }
     
         
+    }
+
+    public function exportCollectiveResults(Request $request)
+    {
+        return Excel::download(new AnalyzerResultsExport($request->data), 'analyzer_results.xlsx');
     }
 
 }
