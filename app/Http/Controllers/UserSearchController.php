@@ -321,7 +321,7 @@ class UserSearchController extends Controller
             }
         }
         $relevantWords = count($wikiData)+count($lsData)+count($cleanKeywords);
-        $relevantDensity = number_format(($relevantWords/$wordCount)*100, 3);
+        $relevantDensity = ($wordCount > 0 ? number_format(($relevantWords/$wordCount)*100, 3) : 0);
         return ['entitiesData' => $entitiesData, 'wikiData' => array_sum($wikiData),
             'lsData' => array_sum($lsData), 'wordCount' => $wordCount, 'keywordCount' => $keywordCount,
             'relevantWords' => $relevantWords, 'relevantDensity' => $relevantDensity];
