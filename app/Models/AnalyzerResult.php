@@ -10,8 +10,7 @@ class AnalyzerResult extends Model
     use HasFactory;
 
     public static $analyzers = [
-      'TEXTRAZOR',
-      'WATSON'
+      'TEXTRAZOR'
     ];
 
     public static $TEXT_RAZOR = 'TEXTRAZOR';
@@ -23,7 +22,8 @@ class AnalyzerResult extends Model
         'url',
         'analyzer',
         'results' ,
-        'html'
+        'html',
+        'default'
     ];
 
     public $casts = [

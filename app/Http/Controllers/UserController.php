@@ -106,6 +106,7 @@ class UserController extends Controller
             $countries = Helper::getCountries();
             $validator = Validator::make($request->all(), [
                 'search_engine' => 'required',
+                'compare_with' => 'required',
                 'keyword' => 'required|string|max:500',
                 'country' => 'required|string|in:' . implode(',', array_keys($countries)),
                 'device' => 'required|string|in:' . implode(',', array_keys(Helper::getDevices())),
@@ -133,7 +134,6 @@ class UserController extends Controller
             }
 
             $response = $client->taskPost($requestData);
-//            dd($response);
             if($response->successful()){
                 $resData = json_decode($response->body(), true);
                 if(isset($resData['status_code'])){
@@ -156,7 +156,7 @@ class UserController extends Controller
                 }
 
             }else{
-                Flash::error('Something went wrong.');
+                Flash::error('Something went wrong with API.');
             }
         }
         catch (\Exception $e){

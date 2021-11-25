@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AnalyzerHelper;
+use App\Helpers\Helper;
 use App\Models\AnalyzerResult;
 use App\Models\Search;
 use http\Client\Response;
@@ -112,16 +113,44 @@ class UserSearchController extends Controller
     {
 
         try {
-            foreach (json_decode($request->urls) as $url) {
+            $urls = json_decode($request->urls);
+            $search = Search::find($id);
+            $analyzerHelper = new AnalyzerHelper();
+            if($search){
+                $compare_with = $search->compare_with;
+                if(!empty($compare_with)){
+                    foreach (AnalyzerResult::$analyzers as $analyzer) {
+                        $result =AnalyzerResult::where('analyzer', $analyzer)->where('url', $compare_with)
+                            ->where('default', 1)->first();
+                        if (empty($result) || $request->has('renew_all')) {
+                            switch ($analyzer) {
+                                case AnalyzerResult::$TEXT_RAZOR:
+                                    $response = $analyzerHelper->getTextRazorResults($compare_with);
+                                    $html = $this->getHtml($compare_with);
+                                    $result = AnalyzerResult::UpdateOrCreate([
+                                        'url' => $compare_with,
+                                        'analyzer' => $analyzer,
+                                        'default' => 1
+                                    ], [
+                                        'results' => $response,
+                                        'html' => $html
+                                    ]);
+                                    break;
+                            }
+                        }
+                    }
+                }
+
+            }
+            foreach ($urls as $url) {
                 foreach (AnalyzerResult::$analyzers as $analyzer) {
                     $result = AnalyzerResult::where('analyzer', $analyzer)->where('url', $url)->first();
                     if (empty($result) || $request->has('renew_all')) {
-                        $analyzerHelper = new AnalyzerHelper();
                         switch ($analyzer) {
                             case AnalyzerResult::$TEXT_RAZOR:
                                 $response = $analyzerHelper->getTextRazorResults($url);
                                 $html = $this->getHtml($url);
-                                $a = AnalyzerResult::UpdateOrCreate([
+                                $result = AnalyzerResult::UpdateOrCreate([
                                     'url' => $url,
                                     'analyzer' => $analyzer,
                                 ], [
@@ -135,6 +164,7 @@ class UserSearchController extends Controller
                     }
                 }
             }
+
             return view('analyzer-results')->with(['id' => $id, 'urls' => json_decode($request->urls)]);
 //            Session::put('urls',  json_decode($request->urls));
 //             return redirect(route('analyzer_results', ['id' => $id]));
@@ -187,8 +217,19 @@ class UserSearchController extends Controller
 
     public function getAnalyzerResults(Request $request){
         try {
-            $urls = AnalyzerResult::whereIn('url', $request->urls)->get()->groupBy('url');
+            $urls = AnalyzerResult::whereIn('url', $request->urls)->where('default', 0)->get()->groupBy('url');
+            $search = Search::find($request->id);
+            $defaultUrlData = [];
+            $defaultUrl = null;
+            if($search){
+                $cleanKeywords = explode(' ', $this->strip_stopwords($search->keyword));
+                $defaultUrl = AnalyzerResult::where('url', $search->compare_with)->where('default', 1)->first();
+                if($defaultUrl){
+                    $defaultUrlData = $this->setEntityData($defaultUrl, $cleanKeywords);
+                }
+            }
             $data = [];
+            $analyticsData = [];
             foreach ($urls as $url => $results) {
                 $analyzerData = [];
                 foreach ($results as $result) {
@@ -198,31 +239,69 @@ class UserSearchController extends Controller
                         $result->update(['html' => $html]);
                     }
                     if ($result->analyzer == AnalyzerResult::$TEXT_RAZOR) {
-                        $analyzerData[AnalyzerResult::$TEXT_RAZOR] = $this->setEntityData($result);
+                        $analyzerData[AnalyzerResult::$TEXT_RAZOR] = $this->setEntityData($result, $cleanKeywords);
                     }
                 }
+                $analyticsData['wordCount'][] = ['url' => $url, 'count' => $analyzerData[AnalyzerResult::$TEXT_RAZOR]['wordCount']];
+                $analyticsData['keyword'][] = ['url' => $url, 'count' => $analyzerData[AnalyzerResult::$TEXT_RAZOR]['keywordCount']];
+                $analyticsData['entites'][] = ['url' => $url, 'count' => $analyzerData[AnalyzerResult::$TEXT_RAZOR]['wikiData']];
+                $analyticsData['lsi'][] = ['url' => $url, 'count' => $analyzerData[AnalyzerResult::$TEXT_RAZOR]['lsData']];
+                $analyticsData['rw'][] = ['url' => $url, 'count' => $analyzerData[AnalyzerResult::$TEXT_RAZOR]['relevantWords']];
+                $analyticsData['rd'][] = ['url' => $url, 'count' => $analyzerData[AnalyzerResult::$TEXT_RAZOR]['relevantDensity']];
                 $data[] = ['url' => $url, 'data' => $analyzerData];
             }
-    
-            $collectiveData = $this->setCollectiveData($data);
-            return response()->json(['data' => $data, 'collectiveData' => $collectiveData]);
+            [$collectiveData, $averageData] = $this->setCollectiveData($data);
+            if($defaultUrl){
+                $defUrl = $defaultUrl->url;
+                $analyticsData['wordCount'][] = ['url' => $defUrl, 'count' => $defaultUrlData['wordCount']];
+                $analyticsData['keyword'][] = ['url' => $defUrl, 'count' =>$defaultUrlData['keywordCount']];
+                $analyticsData['entites'][] = ['url' => $defUrl, 'count' =>$defaultUrlData['wikiData']];
+                $analyticsData['lsi'][] = ['url' => $defUrl, 'count' =>$defaultUrlData['lsData']];
+                $analyticsData['rw'][] = ['url' => $defUrl, 'count' =>$defaultUrlData['relevantWords']];
+                $analyticsData['rd'][] = ['url' => $defUrl, 'count' =>$defaultUrlData['relevantDensity']];
+            }else{
+                $analyticsData['wordCount'][] = ['url' => '', 'count' => 0];
+                $analyticsData['keyword'][] = ['url' => '', 'count' =>0];
+                $analyticsData['entites'][] = ['url' => '', 'count' =>0];
+                $analyticsData['lsi'][] = ['url' => '', 'count' =>0];
+                $analyticsData['rw'][] = ['url' => '', 'count' =>0];
+                $analyticsData['rd'][] = ['url' => '', 'count' =>0];
+            }
+
+
+            array_unshift($analyticsData['wordCount'],$averageData['wordCount']);
+            array_unshift($analyticsData['keyword'], $averageData['keywordCount']);
+            array_unshift($analyticsData['entites'], $averageData['wikiData']);
+            array_unshift($analyticsData['lsi'],$averageData['lsData']);
+            array_unshift($analyticsData['rw'], $averageData['relevantWords']);
+            array_unshift($analyticsData['rd'], $averageData['relevantDensity']);
+
+            return response()->json(['data' => $data, 'defaultUrlData' => $defaultUrlData,
+                'collectiveData' => $collectiveData, 'averageData' => $averageData, 'analyticsData' => $analyticsData]);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
 
     }
-    public function setEntityData($result){
+    public function setEntityData($result, $cleanKeywords){
         $response = $result->results;
         $entitiesData = [];
+        $wikiData = [];
+        $lsData = [];
+        $text = $this->generateText($result->html);
+        $wordCount = $this->getWordCount($text);
+        $keywordCount = 0;
+        foreach ($cleanKeywords as $keyword){
+            $keywordCount += $this->getCountInHtml($text, $keyword);
+        }
         if (isset($response['response']['entities'])) {
             $entities = $response['response']['entities'];
             $groupEntities = collect($entities)->reject(function ($value, $key) {
                 return is_numeric($value['entityId']);
             })->groupBy('entityId');
-            $text = $this->generateText($result->html);
             foreach ($groupEntities as $entity => $entityData) {
                 $first = $entityData->first();
-                $entitiesData[]= [
+                $data = [
                     'entity' => $entity,
                     'matchedText' => $first['matchedText'],
                     'type' => ($first['type'] ?? []),
@@ -232,23 +311,83 @@ class UserSearchController extends Controller
                     'count' => count($entityData),
                     'htmlCount' => $this->getCountInHtml($text, $first['matchedText'])
                 ];
+                $entitiesData[]= $data;
+                if(isset($first['wikiLink'])){
+                    $data['wikiLink'] = $first['wikiLink'];
+                    $wikiData[]= $data['htmlCount'];
+                }else{
+                    $lsData[]= $data['htmlCount'];
+                }
             }
         }
-        return $entitiesData;
+        $relevantWords = count($wikiData)+count($lsData)+count($cleanKeywords);
+        $relevantDensity = number_format(($relevantWords/$wordCount)*100, 3);
+        return ['entitiesData' => $entitiesData, 'wikiData' => array_sum($wikiData),
+            'lsData' => array_sum($lsData), 'wordCount' => $wordCount, 'keywordCount' => $keywordCount,
+            'relevantWords' => $relevantWords, 'relevantDensity' => $relevantDensity];
+    }
+    // remove stopwords from string
+    function strip_stopwords($str = "")
+    {
+        $stopwords = Helper::getStopWords();
+
+        // 1.) break string into words
+        // [^-\w\'] matches characters, that are not [0-9a-zA-Z_-']
+        // if input is unicode/utf-8, the u flag is needed: /pattern/u
+        $words = preg_split('/[^-\w\']+/', $str, -1, PREG_SPLIT_NO_EMPTY);
+
+        // 2.) if we have at least 2 words, remove stopwords
+        if(count($words) > 1)
+        {
+            $words = array_filter($words, function ($w) use (&$stopwords) {
+                return !in_array(strtolower($w), $stopwords);
+                # if utf-8: mb_strtolower($w, "utf-8")
+            });
+        }
+
+        // check if not too much was removed such as "the the" would return empty
+        if(!empty($words))
+            return implode(" ", $words);
+        return $str;
     }
 
     public function setCollectiveData($data){
         $mergedData = [];
-        collect($data)->pluck('data.TEXTRAZOR')->map(function( $value, $key) use (&$mergedData){
-            $mergedData = array_merge($value, $mergedData);
+        $avgKeyword = 0;
+        $avgWordCount = 0;
+        $avgEntity = 0;
+        $avgLsiWords = 0;
+        $avgRelevantWords = 0;
+        $avgRelevantDensity = 0;
+        collect($data)->pluck('data.TEXTRAZOR')->map(function( $value, $key) use (&$mergedData,&$avgKeyword,
+            &$avgWordCount,&$avgEntity,&$avgLsiWords,&$avgRelevantWords,&$avgRelevantDensity){
+            $mergedData = array_merge($value['entitiesData'], $mergedData);
+            $avgKeyword += $value['keywordCount'];
+            $avgWordCount += $value['wordCount'];
+            $avgEntity += $value['wikiData'];
+            $avgLsiWords += $value['lsData'];
+            $avgRelevantWords += $value['relevantWords'];
+            $avgRelevantDensity += $value['relevantDensity'];
         });
-        $data = [];
-        collect($mergedData)->groupBy('entity')->each(function($item, $key) use(&$data){
-            $data[$key] = ['count' => [$item->min('count'), $item->max('count')],
-            'htmlCount' => [$item->min('htmlCount'), $item->max('htmlCount')]
+        $total = count($data);
+        $avgData = [
+            'keywordCount' => $avgKeyword/$total,
+            'wordCount' => $avgWordCount/$total,
+            'wikiData' => $avgEntity/$total,
+            'lsData' => $avgLsiWords/$total,
+            'relevantWords' => $avgRelevantWords/$total,
+            'relevantDensity' => number_format($avgRelevantDensity/$total, 3),
         ];
+
+        $collectiveData = [];
+        collect($mergedData)->groupBy('entity')->each(function($item, $key) use(&$collectiveData){
+            $collectiveData[$key] = ['count' => [$item->min('count'), $item->max('count')],
+            'htmlCount' => [$item->min('htmlCount'), $item->max('htmlCount')]
+            ];
         });
-        return $data;
+
+
+        return [$collectiveData, $avgData];
     }
 
     public function getHtml($url){
@@ -265,11 +404,6 @@ class UserSearchController extends Controller
         return $text;
     }
 
-    public function getCountInHtml($text, $entity){
-      return substr_count(strtolower(implode(' ', $text)), strtolower($entity));
-    }
-
-
     public function getHtmlText($node, &$text){
         if($node){
             if(get_class($node) == "PHPHtmlParser\Dom\Node\HtmlNode"){
@@ -282,9 +416,25 @@ class UserSearchController extends Controller
                 }
             }
         }
-    
-        
+
+
     }
+
+    public function getWordCount($text){
+        $count = 0;
+        $text = implode(' ', $text);
+        $splittedText = explode(' ', $text);
+        collect($splittedText)->map(function($word, $index) use (&$count){
+            if(strlen($word) > 3 && !is_numeric($word)){
+                $count ++;
+            }
+        });
+        return $count;
+    }
+    public function getCountInHtml($text, $entity){
+      return substr_count(strtolower(implode(' ', $text)), strtolower($entity));
+    }
+
 
     public function exportCollectiveResults(Request $request)
     {

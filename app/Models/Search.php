@@ -36,7 +36,8 @@ class Search extends Model
         'device' ,
         'user_id',
         'status',
-        'iterations_count'
+        'iterations_count',
+        'compare_with'
         ];
 
     /**

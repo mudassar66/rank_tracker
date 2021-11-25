@@ -41,6 +41,12 @@
             <x-input id="iterations_count" class="block mt-1 w-full" type="number" name="iterations_count" value="1" required min="1" max="100"/>
         </div>
 
+        <div class="col-md-6">
+            <x-label for="compare_with" :value="__('Compare With')" />
+
+            <x-input id="compare_with" class="block mt-1 w-full" type="text" placeholder="Enter a url to be compared with search results" name="compare_with"  required />
+        </div>
+
 
         <div class="flex items-center justify-end mt-4">
             <x-button class="ml-4">
