@@ -15,7 +15,8 @@
         "laravel/tinker": "^2.5",
         "maatwebsite/excel": "^3.1",
         "paquettg/php-html-parser": "^3.1",
-        "textrazor/textrazor-php": "^1.0"
+        "textrazor/textrazor-php": "^1.0",
+      "ext-curl": "*"
     },
     "require-dev": {
         "facade/ignition": "^2.5",

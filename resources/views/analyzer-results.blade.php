@@ -60,7 +60,17 @@
 
 
     <div class="py-3" id="analyzer_results">
-
+        <div class="py-3">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 bg-white border-b border-gray-200">
+                        <h1 class="font-semibold text-xl text-gray-800 leading-tight mb-2">
+                            @{{ completedRequests }} / @{{ totalRequests }} Requests are completed
+                        </h1>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="py-3">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -184,7 +194,12 @@
                                                 </tr>
                                                 </thead>
                                                 <tbody>
-                                                <tr v-for="(data, entity) in _.orderBy(entities.entitiesData, ['htmlCount'], ['desc'])">
+                                                <tr  v-if="entities.entitiesData.length > 0 && Object.keys(entities.entitiesData[0]).includes('error')">
+                                                    <td colspan="7">
+                                                        @{{ entities.entitiesData[0].error }}
+                                                    </td>
+                                                </tr>
+                                                <tr v-else v-for="(data, entity) in _.orderBy(entities.entitiesData, ['htmlCount'], ['desc'])">
                                                     <td style=" width: 10%;">@{{data.entity}}</td>
                                                     <td style=" width: 5%;">@{{data.matchedText}}</td>
                                                     <td style=" width: 10%;">@{{data.count}}</td>
@@ -265,6 +280,8 @@
                     data: {
                         results: {},
                         urls: {!! json_encode($urls) !!},
+                        totalRequests: 0,
+                        completedRequests:0,
                         id: "{{$id}}",
                         count: 0,
                         collective_results: {},
@@ -288,6 +305,11 @@
                                     that.results = response.data.data;
                                     that.collective_results = response.data.collectiveData;
                                     that.analytics_data = response.data.analyticsData;
+                                    that.totalRequests = response.data.totalRequests;
+                                    that.completedRequests = response.data.completedRequests;
+                                    if(that.completedRequests < that.totalRequests){
+                                        setTimeout(that. getAnalyzerResults, 7000);
+                                    }
                                 }).catch(e => {
                                 HoldOn.close();
                                 swal({
@@ -368,3 +390,5 @@
             </script>
     @endpush
 </x-app-layout>
+
+
