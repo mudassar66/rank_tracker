@@ -170,7 +170,9 @@ class UserSearchController extends Controller
     }
 
     public function getAnalyzerResults(Request $request){
+
         try {
+            ini_set('memory_limit', '500M');
             $totalRequests = count($request->urls);
             $urls = AnalyzerResult::whereIn('url', $request->urls)->where('default', 0)->get()->groupBy('url');
             $completedRequests = $urls->count();
@@ -226,7 +228,6 @@ class UserSearchController extends Controller
             array_unshift($analyticsData['lsi'],$averageData['lsData']);
             array_unshift($analyticsData['rw'], $averageData['relevantWords']);
             array_unshift($analyticsData['rd'], $averageData['relevantDensity']);
-
             return response()->json(['data' => $data, 'defaultUrlData' => $defaultUrlData,
                 'collectiveData' => $collectiveData, 'averageData' => $averageData, 'analyticsData' => $analyticsData,
                 'totalRequests' => $totalRequests, 'completedRequests' => $completedRequests]);
