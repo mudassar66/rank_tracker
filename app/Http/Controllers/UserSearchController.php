@@ -231,7 +231,6 @@ class UserSearchController extends Controller
                 'collectiveData' => $collectiveData, 'averageData' => $averageData, 'analyticsData' => $analyticsData,
                 'totalRequests' => $totalRequests, 'completedRequests' => $completedRequests]);
         } catch (\Exception $e) {
-            dd($e);
             return response()->json(['message' => $e->getMessage()], 500);
         }
 
@@ -276,7 +275,7 @@ class UserSearchController extends Controller
         }elseif (isset($response['error'])){
             $entitiesData[]= ['error'=> $response['error']];
         }
-        $relevantWords = count($wikiData)+count($lsData)+count($cleanKeywords);
+        $relevantWords = array_sum($wikiData)+count($lsData)+$keywordCount;
         $relevantDensity = ($wordCount > 0 ? number_format(($relevantWords/$wordCount)*100, 3) : 0);
         return ['entitiesData' => $entitiesData, 'wikiData' => array_sum($wikiData),
             'lsData' => array_sum($lsData), 'wordCount' => $wordCount, 'keywordCount' => $keywordCount,
